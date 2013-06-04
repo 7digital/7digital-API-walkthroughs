@@ -1,0 +1,172 @@
+<!Doctype html>
+<html>
+	<head>
+		<title>7digital API - Walkthroughs - Get Users Locker - Demo</title>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script src="../../tools/OAuthSimple/js/OAuthSimple.js"></script>
+		<script src="../../tools/jquery-cookie/jquery.cookie.js"></script>
+		<script>
+			$(document).ready(function(){
+				$("#getUsersLockerButton").click(function(){
+					GetRequestToken();
+				});
+			});
+			
+			function GetRequestToken(){
+				var oauthSimpleSigner = OAuthSimple('YOUR_KEY_HERE', 'YOUR_SECRET_HERE');
+				var signedUrl = oauthSimpleSigner.sign({
+														action: 'GET',
+														path: 'https://api.7digital.com/1.2/oauth/requesttoken'
+													}).signed_url;
+
+				$.ajax({
+                        type: "GET",
+                        dataType: "xml",
+                        url: signedUrl,
+                        success: function(data) {
+                            var requestTokenSecret = $(data).find("oauth_token_secret").text()
+                            $.cookie("7digitalApiRequestTokenSecret", requestTokenSecret);
+                            
+                            var requestTokenKey = $(data).find("oauth_token").text();
+                            RedirectToLoginPageToAuthoriseRequestToken(requestTokenKey);
+                        },
+                        error: function(){
+                            alert("Error getting request token...");
+                        }
+                });
+			};
+			
+			function RedirectToLoginPageToAuthoriseRequestToken(requestTokenKey) {
+				var authoriseRequestTokenUrl = "https://account.7digital.com/YOUR_KEY_HERE/oauth/authorise";
+				authoriseRequestTokenUrl = authoriseRequestTokenUrl.concat("?oauth_token=" + requestTokenKey);
+				authoriseRequestTokenUrl = authoriseRequestTokenUrl.concat("&oauth_callback=" + window.location.href.split('?')[0]);
+
+				window.location.href = authoriseRequestTokenUrl;
+			};
+		</script>
+		
+		<script>
+			$(document).ready(function() {
+				var authorisedRequestTokenKey = getURLParameter("oauth_token");
+				var authoriseRequestTokenStatus = getURLParameter("status");
+				
+				if (authorisedRequestTokenKey != 'null' && authoriseRequestTokenStatus != 'null')
+				{
+					if (authoriseRequestTokenStatus == "Authorised")
+					{
+						ExchangeRequestToken(authorisedRequestTokenKey);
+					}
+					else
+					{
+						alert("Error authorising request token... status: " + authoriseRequestTokenStatus);
+					}
+				}
+			});
+			
+			function getURLParameter(name) {
+				return decodeURI((RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]);
+			};
+		</script>
+		
+		<script>
+			function ExchangeRequestToken(requestTokenKey){
+				var signedUrl = (new OAuthSimple()).sign({
+															path:'https://api.7digital.com/1.2/oauth/accesstoken',
+															parameters:"oauth_token=" + requestTokenKey,
+															signatures:{
+																'consumer_key':'YOUR_KEY_HERE', 
+																'shared_secret':'YOUR_SECRET_HERE',
+																'access_token':requestTokenKey,
+																'access_secret':$.cookie("7digitalApiRequestTokenSecret")}})
+															.signed_url;
+				
+				$.ajax({
+						type: "GET",
+						dataType: "xml",
+						url: signedUrl,							
+						success: function(data) {
+							var responseInternalErrorMessage = $(data).find("errorMessage").text();
+							if (responseInternalErrorMessage)
+							{
+								alert("Error exchanging request token for an access token... message: " + responseInternalErrorMessage);
+							}
+							else
+							{
+								var accessTokenKey = $(data).find("oauth_token").text();
+								var accessTokenSecret = $(data).find("oauth_token_secret").text()
+								
+								GetUsersLocker(accessTokenKey, accessTokenSecret);
+							}
+						},
+						error: function(){
+							alert("Error exchanging request token for an access token...");
+						}
+				});
+			};
+		</script>
+		
+		<script>
+			function GetUsersLocker(accessTokenKey, accessTokenSecret){
+				var signedUrl = (new OAuthSimple()).sign({
+															path:'https://api.7digital.com/1.2/user/locker',
+															signatures:{
+																'consumer_key':'YOUR_KEY_HERE', 
+																'shared_secret':'YOUR_SECRET_HERE',
+																'access_token':accessTokenKey,
+																'access_secret':accessTokenSecret}})
+															.signed_url;
+				
+				$.ajax({
+						type: "GET",
+						dataType: "xml",
+						async: false,
+						url: signedUrl,							
+						success: function(data) {
+							var responseInternalErrorMessage = $(data).find("errorMessage").text();
+							if (responseInternalErrorMessage)
+							{
+								alert("Error getting users locker... message: " + responseInternalErrorMessage);
+							}
+							else
+							{
+								$("#results").empty();
+								$(data).find("lockerRelease").each(function(){
+									var releaseId = $(this).find("release").attr("id");
+									var releaseTitle = $(this).find("release").find("title").text();
+									var releaseArtist = $(this).find("release").find("artist").find("appearsAs").text();
+									var releaseImage = $(this).find("release").find("image").text();
+									
+									$(this).find("lockerTrack").each(function(){
+										var trackId = $(this).find("track").attr("id");
+										var trackTitle = $(this).find("track").find("title").text();
+										var firstFormatDownloadUrl = $(this).find("downloadUrl").first().find("url").text();
+
+										$('<li>'
+												+'<img src="' + releaseImage + '" /><br/>'
+												+ '<strong>Title:</strong> <a class="preview" href="' + firstFormatDownloadUrl + '" >' + trackTitle + '</a><br/>'
+												+ '<strong>Artist:</strong> ' + releaseArtist + '<br/>' 
+												+ '<strong>Release:</strong> ' + releaseTitle 
+											+ '</li>').appendTo('#results');
+									});
+								});
+							}
+						},
+						error: function(){
+							alert("Error getting users locker...");
+						}
+				});
+			};
+		</script>		
+	</head>
+	
+	<body>
+		<h1>7digital API - Walkthroughs - Get Users Locker - Demo</h1>
+
+		<br /><hr /><br />
+		
+		<input type="submit" value="Get Users Locker" id="getUsersLockerButton"/>
+		<ul id="results"></ul>
+
+		<br /><hr>
+	</body>
+</html>
