@@ -1,6 +1,6 @@
-[submodule "Tools/jquery-cookie"]
-	path = Tools/jquery-cookie
+[submodule "tools/jquery-cookie"]
+	path = tools/jquery-cookie
 	url = git://github.com/carhartl/jquery-cookie.git
-[submodule "Tools/oauthsimple"]
-	path = Tools/oauthsimple
+[submodule "tools/oauthsimple"]
+	path = tools/oauthsimple
 	url = git://github.com/jrconlin/oauthsimple.git
