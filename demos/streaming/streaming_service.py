@@ -9,7 +9,7 @@ app = Flask(__name__)
 import requests
 
 # some URL templates:
-ECHONEST_PLAYLIST_URL = 'http://developer.echonest.com/api/v4/playlist/basic?api_key={key}&format=json&results=20&type=genre-radio&genre=pop&bucket=id:7digital-UK&bucket=tracks'
+ECHONEST_PLAYLIST_URL = 'http://developer.echonest.com/api/v4/playlist/basic?api_key={key}&format=json&results=20&type=genre-radio&genre={genre}&bucket=id:7digital-UK&bucket=tracks'
 SD_STREAMING_URL = 'http://stream.svc.7digital.net/stream/catalogue'
 SD_INFO_URL = 'http://api.7digital.com/1.2/track/details'
 
@@ -31,12 +31,13 @@ make_playlist_item = lambda track_id: {
 								'info_url': sign_url(SD_INFO_URL, {"trackId": track_id})
 								}
 
-@app.route("/radio")
-def get_genre_playlist() :
+@app.route("/radio/<genre>")
+def get_genre_playlist(genre) :
 	
-	playlist_url = ECHONEST_PLAYLIST_URL.format(key=ECHONEST_API_KEY)
+	playlist_url = ECHONEST_PLAYLIST_URL.format(key=ECHONEST_API_KEY, genre=genre)
+	print playlist_url
 	response = requests.get(playlist_url)
-
+	
 	if response.status_code != 200 :
 		return "No echonest response received, is your ECHONEST_API_KEY set correctly?"
 
