@@ -1,0 +1,82 @@
+<!Doctype html>
+<html>
+	<head>
+		<title>Searching and streaming previews with 7digital's API</title>
+		<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function(){
+				// call 7digital's track search api using value from search box as search term
+				$("#search").click(function(){
+					$.getJSON("http://api.7digital.com/1.2/track/search",  // ask API to return json (accept header = application/json)
+						{ 
+							q: $("#term").val(),
+							oauth_consumer_key: "YOUR_KEY_HERE",
+							pageSize: 4 
+						})
+					 .done(function(json){
+					 	$("#results").empty(); // clear previous result
+					 	$.each(json.searchResults.searchResult, function(key, sr) {
+					 		var track = sr.track;
+				 			$('<li><a class="preview" href="#" >' + 'Title: ' + track.title + '</a><br/>' 
+		                   	 + 'Artist: ' + track.artist.name + '<br/>' 
+					 		 + 'Release: ' + track.release.title + '<br/>' 
+					 		 + '<input type="hidden" class="trackId" value="' + track.id + '" />' 
+					 		 + '<input type="hidden" class="releaseId" value="' + track.release.id + '" />'
+							 + '<input type="hidden" class="releaseImage" value="' + track.release.image + '" />'
+					 		 + '</li>')
+						 	.appendTo('#results');	
+					    });
+					 });
+				});
+
+				// when a track is clicked, get the preview URL and start to play it
+				$("body").on("click", "a.preview", function(event){ // using on because link dynamically created
+					event.preventDefault(); // cancel the normal follow link behaviour
+
+					// clear previously-selected track list and image
+					$('img.relImg').remove();
+					$('div.trackListTrack').remove();
+				 
+					// add the image below the player
+					$("audio").after('<img class="relImg" src="' + $(this).siblings(".releaseImage").val() + '" />');
+				 
+					// grab the list of tracks from the release/tracks endpoint
+					$.get("http://api.7digital.com/1.2/release/tracks",
+						{
+					 		releaseId: $(this).siblings(".releaseId").val(),
+					 		shopId: 34,
+					 		oauth_consumer_key: "YOUR_KEY_HERE",
+					 		pageSize: 4 // change to suit your needs
+					 	})
+					 	.done(function(xml){
+							// add a link to each track below the album's image
+					 		$.each($(xml).find("track"), function(key, track){
+								$("img.relImg").after('<div class="trackListTrack" >' 
+													 + '<a href="' + $(track).find("url") + '">' 
+													 + $(track).find("title").text() + '</a></div>');
+							});
+						});
+
+					$.get("http://api.7digital.com/1.2/track/preview",
+						{
+							trackId: $(this).siblings(".trackId").val(), // get track id from hidden field next to link in dom
+							redirect: false, // we don't want to be redirected to the file
+							oauth_consumer_key: "YOUR_KEY_HERE"
+						})
+					 .done(function(xml) {
+					 	var url = $(xml).find("url").text();
+					 	$("#player").attr("src", url); // set url of song on player
+					 	$("#player").get(0).load(); // load song on player
+					 	$("#player").get(0).play(); // start player
+					 });
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<input type="text" id="term">
+		<input type="submit" value="search" id="search"/>
+		<ol id="results"></ol>
+		<audio id="player" style="width:550px; margin: 0 auto; display:block;" type="audio/mp3" controls></audio>
+	</body>
+</html>
