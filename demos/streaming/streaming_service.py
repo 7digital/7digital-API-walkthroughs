@@ -33,20 +33,17 @@ make_playlist_item = lambda track_id: {
 
 @app.route("/radio/<genre>")
 def get_genre_playlist(genre) :
-	
 	playlist_url = ECHONEST_PLAYLIST_URL.format(key=ECHONEST_API_KEY, genre=genre)
-	print playlist_url
 	response = requests.get(playlist_url)
 	
 	if response.status_code != 200 :
 		return "No echonest response received, is your ECHONEST_API_KEY set correctly?"
 
 	track_ids = [extract_7digital_track_id(song) for song in response.json()["response"]["songs"]]
-
 	playlist = [make_playlist_item(track_id) for track_id in track_ids]
 
 	return jsonify(playlist=playlist)
 	
 if __name__ == "__main__" :
-	app.debug = True
+	#app.debug = True # Uncomment for debug info in the browser
 	app.run()
