@@ -37,7 +37,7 @@ def get_genre_playlist(genre) :
 	response = requests.get(playlist_url)
 	
 	if response.status_code != 200 :
-		return "No echonest response received, is your ECHONEST_API_KEY set correctly?"
+		return ("No echonest response received, is your ECHONEST_API_KEY set correctly? Or are you asking for an unknown genre?", 500)
 
 	track_ids = [extract_7digital_track_id(song) for song in response.json()["response"]["songs"]]
 	playlist = [make_playlist_item(track_id) for track_id in track_ids]
