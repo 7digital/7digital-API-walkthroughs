@@ -28,7 +28,7 @@ extract_7digital_track_id = lambda song: song["tracks"][0]["foreign_id"].split("
 # 7digital API playlist helper
 make_playlist_item = lambda track_id: {
 								'streaming_url': sign_url(SD_STREAMING_URL, {"trackId": track_id}),
-								'info_url': sign_url(SD_INFO_URL, {"trackId": track_id})
+								'info_url': sign_url(SD_INFO_URL, {"trackId": track_id, "imageSize": 350})
 								}
 
 @app.route("/radio/<genre>")
