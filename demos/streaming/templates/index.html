@@ -8,19 +8,38 @@
 		$.getJSON("radio/"+genre, playTrack);
 	};
 
-	var playTrack = function(playlist) {
+	var displayTrackInfo = function(xml) {
+		var $trackInfo = $(xml);
+		var title = $trackInfo.find("track > title").text();
+		var artist = $trackInfo.find("track > artist > name").text();
+		var image = $trackInfo.find("track > release > image").text();
+		console.log(artist, title, image);
+	};
+
+	var loadTrackInfo = function(url) {
+		console.log(url);
+		$.get(url, displayTrackInfo);
+	};
+
+	var playTrack = function(playlistResponse) {
+		
+		var currentSong = playlistResponse.playlist[0];
+
 		var player = new Audio();
-		player.setAttribute("src", playlist.playlist[0].streaming_url);
+		player.addEventListener("playing", function(){loadTrackInfo(currentSong.info_url);});
+		player.addEventListener("ended", function(){console.log("ended"); console.log(arguments)});
+		player.setAttribute("src", currentSong.streaming_url);
+		player.pause();
 		player.load();
 		player.play();
+		
+
 	};
 
 	</script>
 </head>
 <body>
 	<h1>Welcome to SuperStreamingService Radio!</h1>
-
-
 
 	<script src="http://code.jquery.com/jquery.js"></script>
 </body>
