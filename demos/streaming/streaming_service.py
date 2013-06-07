@@ -2,7 +2,7 @@
 from consumer_keys import *
 
 # Flask application
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 app = Flask(__name__)
 
 # requests is what we use to query the echonest API
@@ -43,7 +43,11 @@ def get_genre_playlist(genre) :
 	playlist = [make_playlist_item(track_id) for track_id in track_ids]
 
 	return jsonify(playlist=playlist)
-	
+
+@app.route("/")
+def index() :
+	return render_template("index.html")
+
 if __name__ == "__main__" :
-	#app.debug = True # Uncomment for debug info in the browser
+	app.debug = True # Uncomment for debug info in the browser
 	app.run()
