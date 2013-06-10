@@ -3,9 +3,28 @@
 <head>
 	<title>SuperStreamingService</title>
 	<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
-	<script type="text/javascript">
+	<style type="text/css">
+	
+	#nowplaying li:first-child {
+		font-size: 2em;
+		padding-bottom: 1em;
+	}
+	
+	#stations li {
+		display: block;
+		float: left;
+		padding-right: 1em;
+	}
+
+	#stations {
+		margin: 0;
+	}
+	</style>
+	<script src="http://code.jquery.com/jquery.js"></script>
+	<script type="text/javascript" type="text/javascript">
+
 	var loadPlaylist = function(genre) {
-		$.getJSON("radio/"+genre, playTrack);
+		$.getJSON("radio/"+genre, function(response){playTrack(response, 0)});
 	};
 
 	var displayTrackInfo = function(xml) {
@@ -13,35 +32,72 @@
 		var title = $trackInfo.find("track > title").text();
 		var artist = $trackInfo.find("track > artist > name").text();
 		var image = $trackInfo.find("track > release > image").text();
-		console.log(artist, title, image);
+		var url = $trackInfo.find("track > url").text();
+		$("#nowplaying").prepend("<li><strong>" + artist + "</strong> - "+ title + " <a href='"+url+"'>Buy</a></li>");
+		$("#cover").attr("src", image);	
 	};
 
-	var loadTrackInfo = function(url) {
-		console.log(url);
-		$.get(url, displayTrackInfo);
-	};
 
-	var playTrack = function(playlistResponse) {
-		
-		var currentSong = playlistResponse.playlist[0];
+	var playTrack = function(playlistResponse, position) {
+		var currentSong = playlistResponse.playlist[position];
+		var player = document.getElementById("player");
+		var loadTrackInfo = function() {
+			player.removeEventListener("playing", loadTrackInfo);
+			$.get(currentSong.info_url, displayTrackInfo);
+		};
 
-		var player = new Audio();
-		player.addEventListener("playing", function(){loadTrackInfo(currentSong.info_url);});
-		player.addEventListener("ended", function(){console.log("ended"); console.log(arguments)});
+		var playNext = function() {
+			player.removeEventListener("ended", playNext);
+			playTrack(playlistResponse, position + 1);
+		};
+
+		player.addEventListener("ended", playNext);
+		player.addEventListener("playing", loadTrackInfo);
 		player.setAttribute("src", currentSong.streaming_url);
 		player.pause();
 		player.load();
 		player.play();
-		
-
 	};
 
+	
+	$(document).ready(function() {
+		$("#stations a").click(function(){
+			$("#station").text(this.innerText);
+			loadPlaylist(this.innerText);
+		});
+	});
 	</script>
 </head>
 <body>
-	<h1>Welcome to SuperStreamingService Radio!</h1>
-
-	<script src="http://code.jquery.com/jquery.js"></script>
+	<div class="container">
+	<div class="hero-unit">
+		<h1>Welcome to SuperStreamingService Radio!</h1>
+		<p>Built with the 7digital API and Echonest! Read the tutorial walkthrough here.</p>
+		<h2>Currently listening to <em id="station">nothing</em>. Try another?</h3>
+		<ul id="stations">
+			<li><a class="btn" href="#pop">pop</a></li>
+			<li><a class="btn" href="#rock">rock</a></li>
+			<li><a class="btn" href="#detroit techno">detroit techno</a></li>
+			<li><a class="btn" href="#ambient">ambient</a></li>
+			<li><a class="btn" href="#disco">disco</a></li>
+			<li><a class="btn" href="#metal">metal</a></li>
+			<li><a class="btn" href="#baroque">baroque</a></li>
+			<li><a class="btn" href="#house">house</a></li>
+			<li><a class="btn" href="#gabba">gabba</a></li>
+			<li><a class="btn" href="#soukous">soukous</a></li>
+		</ul>
+	</div>
+	<div class="row">
+		<div class="span6">
+			<img id="cover" src="" width="350" height="350" />
+		</div>
+		<div class="span6">
+			<h3>Now playing:</h3>
+			<ol id="nowplaying" class="unstyled">
+			</ol>
+		</div>
+	</div>
+	</div>
+	<audio id="player"/>
 </body>
 </html>
-
