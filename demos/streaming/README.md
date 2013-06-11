@@ -40,7 +40,7 @@ First of all we ask Echonest for a radio playlist of our chosen genre.
 We can ask Echonest to return 7digital IDs by using the bucket=id:7digital-UK parameter. Other 7digital buckets for other territories are available, consult the Echonest documentation for more info.
 
 The response from echonest looks like:
-
+```json
  {
    "response": {
      "status": {
@@ -71,3 +71,4 @@ The response from echonest looks like:
      ]
      }
   }
+ ```
