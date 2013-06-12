@@ -3,9 +3,9 @@
 
 In this walkthrough we will build a simple in-browser radio-style streaming service.
 
-We are going to use the Echonest API to generate a genre playlist, and then use the 7digital API to play that in the browser.
+We are going to use the [Echonest API](http://developer.echonest.com/docs/v4/) to generate a genre playlist, and then use the 7digital API to play that in the browser.
 
-The server side playlist component is implemented in Python, using the Flask and Requests library. It simply returns a JSON list of 7digital URLs that have been pre-signed with your consumer key. This is so that you do not need to expose your API consumer secret to the end user.
+The server side playlist component is implemented in Python, using the [Flask](http://flask.pocoo.org/) and [Requests](http://docs.python-requests.org/en/latest/) libraries. It simply returns a JSON list of 7digital URLs that have been pre-signed with your consumer key. This is so that you do not need to expose your API consumer secret to the end user.
 
 The client side component reads this playlist and streams the audio using the HTML5 audio object, as well as displaying the cover image and track details.
 
@@ -73,7 +73,7 @@ The response from echonest looks like:
   }
  ```
 
-We extract the 7digital track ID from the foreign_id, and use this to construct a playlist with pairs of OAuth signed links, one to the streaming API and one to the track/details endpoint:
+We extract the 7digital track ID from the foreign_id, and use this to construct a playlist with pairs of OAuth signed links, one to the [streaming API](http://developer.7digital.com/resources/api-docs/streaming-api) and one to the [track/details](http://developer.7digital.com/resources/api-docs/catalogue-api#track/details) endpoint:
 
 ```json
 {
@@ -113,3 +113,5 @@ var playTrack = function(playlistResponse, position) {
 	player.play();
 };
 ```
+
+The displayTrackInfo function parses the response from track/details. This endpoint does not currently support JSON so we need to use the jQuery XML functionality to extract the information we need.
