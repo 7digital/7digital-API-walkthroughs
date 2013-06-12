@@ -33,7 +33,7 @@ Server side component
 
 The purpose of this is to deliver pre-signed streaming links to the browser. We could sign links to the 7digital Streaming API directly in the browser with Javascript, but this would require us to expose the 7digital consumer secret available in the browser.
 
-First of all we ask Echonest for a radio playlist of our chosen genre.
+First of all we ask Echonest for a radio playlist of our chosen genre (as provided in the URL : http://127.0.0.1:5000/genre/chicago%20house
 
 	ECHONEST_PLAYLIST_URL = 'http://developer.echonest.com/api/v4/playlist/basic?api_key={key}&format=json&results=20&type=genre-radio&genre={genre}&bucket=id:7digital-UK&bucket=tracks'
 
@@ -72,3 +72,44 @@ The response from echonest looks like:
      }
   }
  ```
+
+We extract the 7digital track ID from the foreign_id, and use this to construct a playlist with pairs of OAuth signed links, one to the streaming API and one to the track/details endpoint:
+
+```json
+{
+  "playlist": [
+    {
+      "info_url": "http://api.7digital.com/1.2/track/details?oauth_version=1.0&oauth_signature=qdXgyVQUSXnq1nDY4yj6vxdgM40%3D&imageSize=350&oauth_nonce=36860626&oauth_timestamp=1371047874&trackId=14259160&oauth_consumer_key=my_key&oauth_signature_method=HMAC-SHA1",
+      "streaming_url": "http://stream.svc.7digital.net/stream/catalogue?oauth_nonce=68593495&oauth_timestamp=1371047874&trackId=14259160&oauth_consumer_key=my_key&oauth_signature_method=HMAC-SHA1&oauth_version=1.0&oauth_signature=AApuNrKBRoI6xAX8nfkUMvjAYjI%3D"
+    },
+... more links ...
+}
+```
+
+Client side component
+---------------------
+
+We use jQuery to request a playlist for the genre we've selected. This is passed to the playTrack function which loads the streaming_url into an HTML5 audio object, and sets event listeners to download the track information once the track starts playing, and to move to the next playlist item once the current one has finished:
+
+```js
+var playTrack = function(playlistResponse, position) {
+	var currentSong = playlistResponse.playlist[position];
+	var player = document.getElementById("player");
+	var loadTrackInfo = function() {
+		player.removeEventListener("playing", loadTrackInfo);
+		$.get(currentSong.info_url, displayTrackInfo);
+	};
+
+	var playNext = function() {
+		player.removeEventListener("ended", playNext);
+		playTrack(playlistResponse, position + 1);
+	};
+
+	player.addEventListener("ended", playNext);
+	player.addEventListener("playing", loadTrackInfo);
+	player.setAttribute("src", currentSong.streaming_url);
+	player.pause();
+	player.load();
+	player.play();
+};
+```
